@@ -1,8 +1,10 @@
-audio_switch
+pulseaudio_switch_output
 ---
 
-Bash script to switch audio output and send a notification using libnotify.
+Bash script to switch audio output and send a notification using `libnotify`.
 
-Accepts the '-r' or '--restart' argument to kill and bring pulseaudio back on.
+Ignores the echo cancelled sink added by loading module `module-echo-cancel`.
 
-Thanks to tsvetan ([Ubuntu Forums](https://ubuntuforums.org/archive/index.php/t-1370383.html))
+Also accepts the `-r` or `--restart` argument to kill and bring pulseaudio back.
+
+Thanks to tsvetan ([Ubuntu Forums](https://ubuntuforums.org/archive/index.php/t-1370383.html)).
