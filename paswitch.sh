@@ -3,13 +3,13 @@
 # Bash script to switch audio output and
 # send a notification using libnotify.
 
-SEND_NOTIFICATION=1
+SEND_NOTIFICATION=true
 
-if [ "$1" = "-r" ] || [ "$1" = "--restart" ]
+if [ "$1" = "-r" -o "$1" = "--restart" ]
 then
     pulseaudio -k; sleep 1
     pulseaudio --start -D
-    notify-send -i notification-audio-volume-high --hint=string:x-canonical-private-synchronous: "Sound output restarted" "" -t 3000
+    notify-send -i notification-audio-volume-high --hint=string:x-canonical-private-synchronous: "Pulseaudio restarted" "" -t 3000
     exit
 fi
 
@@ -21,17 +21,16 @@ declare -i sink_echo_cancel=(`pacmd list-sinks | grep device.description | grep 
 
 # ignore echo cancelled sink (repeated output)
 [ ! $sink_echo_cancel = '' ] &&
-declare -i sink_echo_cancel=$(($sink_echo_cancel - 1 ))
+declare -i sink_echo_cancel=(`pacmd list-sinks | grep index | sed 's/.*index: //' | awk "NR==$sink_echo_cancel"`)
 
 # find the next sink (not always the next index number)
 declare -i ord=0
 while [ $ord -lt $sinks_count ]
 do
-    echo ${sinks[$ord]}
-    if [ ${sinks[$ord]} -gt $active_sink_index ]
+    if [ ${sinks[$ord]} -ne $active_sink_index ] # -gt
     then
         next_sink_index=${sinks[$ord]}
-        [ $next_sink_index -ne $sink_echo_cancel ] &&
+        [ "$sink_echo_cancel" = "" -o "$next_sink_index" != "$sink_echo_cancel" ] &&
         break
     fi
     let ord++
@@ -46,15 +45,17 @@ do
     pacmd "move-sink-input $app $next_sink_index"
 done
 
-# send notification
+# sink notification
 declare -i ndx=0
 pacmd list-sinks | sed -n -e 's/device.description[[:space:]]=[[:space:]]"\(.*\)"/\1/p' |
 while read sink
 do
-    if [ $SEND_NOTIFICATION = 1 ] && [ $(( $ord % $sinks_count )) -eq $ndx ]
+    if [ $(( $ord % $sinks_count )) -eq $ndx ]
     then
+        echo "$sink"
+        [ $SEND_NOTIFICATION = true ] &&
         notify-send -i notification-audio-volume-high --hint=string:x-canonical-private-synchronous: "Sound output switched" "$sink" -t 3000
-        exit
+        break
     fi
     let ndx++
 done
