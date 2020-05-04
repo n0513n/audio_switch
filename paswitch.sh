@@ -36,6 +36,10 @@ do
     let ord++
 done
 
+# exit if nothing to change
+[ "$sink_echo_cancel" = "$next_sink_index" ] &&
+exit 1
+
 # change the default sink
 pacmd "set-default-sink ${next_sink_index}"
 
